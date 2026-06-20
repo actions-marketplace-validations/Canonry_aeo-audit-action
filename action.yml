@@ -1,5 +1,5 @@
 name: "AEO Audit Guard"
-description: "Technical static AEO (Answer Engine Optimization) audit for CI — build your site, audit the rendered HTML offline (no deploy, no secrets, deterministic), and fail PRs on regressions vs a baseline."
+description: "Technical static AEO (Answer Engine Optimization) audit for CI — build your site, audit the rendered HTML offline for regressions."
 author: "Canonry"
 branding:
   icon: "trending-up"
