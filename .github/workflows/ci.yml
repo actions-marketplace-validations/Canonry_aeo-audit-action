@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  # Lint the composite action's shell scripts (shellcheck is preinstalled on the runner).
+  shellcheck:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - run: shellcheck audit.sh compare.sh lib.sh resolve-baseline.sh
+
+  # Exercise the action end-to-end against a committed HTML fixture using the published
+  # engine: seed a baseline, then gate the same fixture against it and expect a pass.
+  smoke:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Seed a baseline from the fixture
+        uses: ./
+        with:
+          mode: static
+          target: ${{ github.workspace }}/test/fixtures/site
+          base-url: https://acme-robotics.example
+          baseline: committed
+          baseline-path: ${{ runner.temp }}/baseline.json
+          mode-of-run: update-baseline
+          comment: "false"
+      - name: Gate the fixture against its own baseline (expect pass)
+        id: gate
+        uses: ./
+        with:
+          mode: static
+          target: ${{ github.workspace }}/test/fixtures/site
+          base-url: https://acme-robotics.example
+          baseline: committed
+          baseline-path: ${{ runner.temp }}/baseline.json
+          comment: "false"
+      - name: Assert the gate passed
+        run: |
+          test "${{ steps.gate.outputs.verdict }}" = "pass" \
+            || { echo "expected verdict=pass, got '${{ steps.gate.outputs.verdict }}'"; exit 1; }
